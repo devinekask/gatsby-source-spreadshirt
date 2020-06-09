@@ -1,7 +1,7 @@
 {
-  "name": "gatsby-starter-plugin",
-  "version": "1.0.0",
-  "description": "A minimal boilerplate for the essential files Gatsby looks for in a plugin",
+  "name": "gatsby-source-spreadshirt",
+  "version": "0.1.0",
+  "description": "A source plugin to implement a Spreadshirt shop in Gatsby",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -9,8 +9,13 @@
   },
   "keywords": [
     "gatsby",
-    "gatsby-plugin"
+    "gatsby-plugin",
+    "spreadshirt"
   ],
-  "author": "Kyle Gill <kyle.robert.gill@gmail.com>",
-  "license": "MIT"
+  "author": "Devine <simon.vanherweghe@howest.be>",
+  "license": "MIT",
+  "dependencies": {
+    "gatsby-source-filesystem": "^2.3.10",
+    "node-fetch": "^2.6.0"
+  }
 }
