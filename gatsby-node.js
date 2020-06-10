@@ -22,13 +22,16 @@ fetchApi = async (apiKey, resource) => {
   return await response.json();
 };
 
-getAllSellables = async (apiKey, shopId) =>
-  await fetchApi(apiKey, `shops/${shopId}/sellables?page=0&mediaType=json`);
-
-getProductType = async (apiKey, shopId, id) =>
+getAllSellables = async (apiKey, shopId, locale) =>
   await fetchApi(
     apiKey,
-    `shops/${shopId}/productTypes/${id}?page=0&mediaType=json`
+    `shops/${shopId}/sellables?page=0&mediaType=json&locale=${locale}`
+  );
+
+getProductType = async (apiKey, shopId, locale, id) =>
+  await fetchApi(
+    apiKey,
+    `shops/${shopId}/productTypes/${id}?page=0&mediaType=json&locale=${locale}`
   );
 
 getCurrency = async (apiKey, id) =>
@@ -45,6 +48,7 @@ exports.createSchemaCustomization = ({ actions }) => {
     }
     type ${SELLABLE_NODE_TYPE} implements Node {
       id: ID!
+      slug: String!
       productType: ${PRODUCTTYPE_NODE_TYPE} @link(from: "productTypeId" by: "productTypeId" )
       price: Price!
     }
@@ -62,12 +66,12 @@ exports.sourceNodes = async (
   pluginOptions
 ) => {
   const { createNode } = actions;
-  const { shopId, apiKey } = pluginOptions;
+  const { shopId, apiKey, locale } = pluginOptions;
 
   const productTypeIds = new Set();
   const currencyIds = new Set();
 
-  const sellables = await getAllSellables(apiKey, shopId);
+  const sellables = await getAllSellables(apiKey, shopId, locale);
 
   sellables.sellables.forEach((sellable) => {
     productTypeIds.add(sellable.productTypeId);
@@ -88,7 +92,7 @@ exports.sourceNodes = async (
   const productTypes = await Promise.all(
     Array.from(productTypeIds).map(async (productTypeId) => {
       console.log("productType", productTypeId);
-      return await getProductType(apiKey, shopId, productTypeId);
+      return await getProductType(apiKey, shopId, locale, productTypeId);
     })
   );
 
