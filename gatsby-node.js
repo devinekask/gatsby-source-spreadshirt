@@ -156,4 +156,23 @@ exports.onCreateNode = async ({
       node.remoteImage___NODE = fileNode.id;
     }
   }
+  if (node.internal.type === PRODUCTTYPE_NODE_TYPE) {
+    const sizes = node.resources.filter((res) => res.type === "size");
+    console.log(sizes);
+    if (sizes.length === 1) {
+      const url = sizes[0].href;
+      const fileNode = await createRemoteFileNode({
+        // the url of the remote image to generate a node for
+        url,
+        parentNodeId: node.id,
+        createNode,
+        createNodeId,
+        getCache,
+      });
+      console.log("Size image created", url);
+      if (fileNode) {
+        node.remoteImage___NODE = fileNode.id;
+      }
+    }
+  }
 };
