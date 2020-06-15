@@ -6,7 +6,6 @@ const PRODUCTTYPE_NODE_TYPE = `SpreadshirtProductType`;
 const CURRENCY_NODE_TYPE = `SpreadshirtCurrency`;
 
 fetchApi = async (apiKey, resource) => {
-  console.log(apiKey);
   try {
     const requestOptions = {
       method: "GET",
@@ -84,7 +83,7 @@ exports.createSchemaCustomization = ({ actions }) => {
       id: String!
       name: String!
       group: String!
-      weight: Int
+      weight: Float! 
       measures: [Measure]
     }
     type Measure {
@@ -95,6 +94,10 @@ exports.createSchemaCustomization = ({ actions }) => {
       value: Int!
       unit: String!
     }
+    type PreviewImage {
+      url: String!
+      type: String!
+    }
     type ${SELLABLE_NODE_TYPE} implements Node {
       id: ID!
       sellableId: String!
@@ -102,8 +105,9 @@ exports.createSchemaCustomization = ({ actions }) => {
       slug: String!
       productType: ${PRODUCTTYPE_NODE_TYPE} @link(from: "productTypeId" by: "productTypeId" )
       price: Price!
-      remoteImage: File @fileByRelativePath
+      remoteImage: File @link
       appearanceIds: [String!]
+      defaultAppearanceId: String!
     }
     type ${PRODUCTTYPE_NODE_TYPE} implements Node {
       id: ID!
@@ -113,7 +117,7 @@ exports.createSchemaCustomization = ({ actions }) => {
       sizeFitHint: String!
       appearances: [Appearance!]
       sizes: [Size!]
-      remoteImage: File @fileByRelativePath
+      remoteImage: File @link
     }
     type ${CURRENCY_NODE_TYPE} implements Node {
       id: ID!
@@ -148,11 +152,11 @@ exports.sourceNodes = async (
         },
       });
     });
+    console.info(`Sellables created: ${sellables.sellables.length}`);
   }
 
   const productTypes = await Promise.all(
     Array.from(productTypeIds).map(async (productTypeId) => {
-      console.log("productType", productTypeId);
       return await getProductType(apiKey, shopId, locale, productTypeId);
     })
   );
@@ -171,10 +175,10 @@ exports.sourceNodes = async (
       },
     });
   });
+  console.info(`ProductTypes created: ${productTypes.length}`);
 
   const currencies = await Promise.all(
     Array.from(currencyIds).map(async (currencyId) => {
-      console.log("currency", currencyId);
       return await getCurrency(apiKey, currencyId);
     })
   );
@@ -193,12 +197,13 @@ exports.sourceNodes = async (
       },
     });
   });
+  console.info(`Currencies created: ${currencies.length}`);
 
   return;
 };
 
 exports.onCreateNode = async ({
-  node, // the node that was just created
+  node,
   actions: { createNode },
   createNodeId,
   getCache,
@@ -212,14 +217,13 @@ exports.onCreateNode = async ({
       createNodeId,
       getCache,
     });
-    console.log("Image created", node.previewImage.url);
+
     if (fileNode) {
-      node.remoteImage___NODE = fileNode.id;
+      node.remoteImage = fileNode.id;
     }
   }
   if (node.internal.type === PRODUCTTYPE_NODE_TYPE) {
     const sizes = node.resources.filter((res) => res.type === "size");
-    console.log(sizes);
     if (sizes.length === 1) {
       const url = sizes[0].href;
       const fileNode = await createRemoteFileNode({
@@ -230,9 +234,8 @@ exports.onCreateNode = async ({
         createNodeId,
         getCache,
       });
-      console.log("Size image created", url);
       if (fileNode) {
-        node.remoteImage___NODE = fileNode.id;
+        node.remoteImage = fileNode.id;
       }
     }
   }
