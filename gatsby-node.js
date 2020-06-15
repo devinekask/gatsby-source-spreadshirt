@@ -6,20 +6,34 @@ const PRODUCTTYPE_NODE_TYPE = `SpreadshirtProductType`;
 const CURRENCY_NODE_TYPE = `SpreadshirtCurrency`;
 
 fetchApi = async (apiKey, resource) => {
-  const requestOptions = {
-    method: "GET",
-    headers: {
-      "User-Agent":
-        "Gatsby-source-spreadshirt/0.1 (Devine.be; simon.vanherweghe@howest.be)",
-      Authorization: `SprdAuth apiKey="${apiKey}"`,
-    },
-    redirect: "follow",
-  };
-  const response = await fetch(
-    `https://api.spreadshirt.net/api/v1/${resource}`,
-    requestOptions
-  );
-  return await response.json();
+  console.log(apiKey);
+  try {
+    const requestOptions = {
+      method: "GET",
+      headers: {
+        "User-Agent":
+          "Gatsby-source-spreadshirt/0.1 (Devine.be; simon.vanherweghe@howest.be)",
+        Authorization: `SprdAuth apiKey="${apiKey}"`,
+      },
+      redirect: "follow",
+    };
+    const response = await fetch(
+      `https://api.spreadshirt.net/api/v1/${resource}`,
+      requestOptions
+    );
+    if (!response.ok) {
+      // NOT res.status >= 200 && res.status < 300
+      console.log(response.statusText);
+      throw new Error({
+        statusCode: response.status,
+        body: response.statusText,
+      });
+    }
+    return await response.json();
+  } catch (error) {
+    console.log(error);
+    return error;
+  }
 };
 
 getAllSellables = async (apiKey, shopId, locale) =>
@@ -46,15 +60,60 @@ exports.createSchemaCustomization = ({ actions }) => {
       amount: Float!
       currency: ${CURRENCY_NODE_TYPE} @link(from: "price.currencyId" by: "currencyId" )
     }
+    type Appearance {
+      id: String!
+      name: String!
+      colors: [Color]
+      printTypes: [PrintType]
+      resources: [Resource]
+    }
+    type Color {
+      index: Int!
+      value: String!
+    }
+    type PrintType {
+      href: String!
+      id: String!
+    }
+    type Resource {
+      mediaType: String!
+      href: String!
+      type: String
+    }
+    type Size {
+      id: String!
+      name: String!
+      group: String!
+      weight: Int
+      measures: [Measure]
+    }
+    type Measure {
+      name: String!
+      value: MeasureValue!
+    }
+    type MeasureValue {
+      value: Int!
+      unit: String!
+    }
     type ${SELLABLE_NODE_TYPE} implements Node {
       id: ID!
+      sellableId: String!
+      name: String!
       slug: String!
       productType: ${PRODUCTTYPE_NODE_TYPE} @link(from: "productTypeId" by: "productTypeId" )
       price: Price!
+      remoteImage: File @fileByRelativePath
+      appearanceIds: [String!]
     }
     type ${PRODUCTTYPE_NODE_TYPE} implements Node {
       id: ID!
       name: String!
+      shortDescription: String!
+      description: String!
+      sizeFitHint: String!
+      appearances: [Appearance!]
+      sizes: [Size!]
+      remoteImage: File @fileByRelativePath
     }
     type ${CURRENCY_NODE_TYPE} implements Node {
       id: ID!
@@ -73,21 +132,23 @@ exports.sourceNodes = async (
 
   const sellables = await getAllSellables(apiKey, shopId, locale);
 
-  sellables.sellables.forEach((sellable) => {
-    productTypeIds.add(sellable.productTypeId);
-    currencyIds.add(sellable.price.currencyId);
-    createNode({
-      ...sellable,
-      id: createNodeId(`${SELLABLE_NODE_TYPE}-${sellable.sellableId}`),
-      parent: null,
-      children: [],
-      internal: {
-        type: SELLABLE_NODE_TYPE,
-        content: JSON.stringify(sellable),
-        contentDigest: createContentDigest(sellable),
-      },
+  if (sellables.sellables) {
+    sellables.sellables.forEach((sellable) => {
+      productTypeIds.add(sellable.productTypeId);
+      currencyIds.add(sellable.price.currencyId);
+      createNode({
+        ...sellable,
+        id: createNodeId(`${SELLABLE_NODE_TYPE}-${sellable.sellableId}`),
+        parent: null,
+        children: [],
+        internal: {
+          type: SELLABLE_NODE_TYPE,
+          content: JSON.stringify(sellable),
+          contentDigest: createContentDigest(sellable),
+        },
+      });
     });
-  });
+  }
 
   const productTypes = await Promise.all(
     Array.from(productTypeIds).map(async (productTypeId) => {
