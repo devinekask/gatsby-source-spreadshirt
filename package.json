@@ -16,6 +16,6 @@
   "license": "MIT",
   "dependencies": {
     "gatsby-source-filesystem": "^2.3.10",
-    "node-fetch": "^2.6.0"
+    "node-fetch": "^2.6.1"
   }
 }
