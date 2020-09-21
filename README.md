@@ -30,10 +30,11 @@ When you want to have a static version of your Spreadshirt product pages
 options: {
   shopId: SPREADSHIRT_SHOP_ID,
   apiKey: SPREADSHIRT_API_KEY,
+  locale: SPREADSHIRT_LOCALE
 }
 ```
 
-## How to query for data (source plugins only)
+## How to query for data
 
 ```graphql
 query MyQuery {

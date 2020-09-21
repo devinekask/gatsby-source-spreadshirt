@@ -61,7 +61,7 @@ exports.createSchemaCustomization = ({ actions }) => {
     }
     type Appearance {
       id: String!
-      name: String!
+      name: String
       colors: [Color]
       printTypes: [PrintType]
       resources: [Resource]
@@ -81,9 +81,9 @@ exports.createSchemaCustomization = ({ actions }) => {
     }
     type Size {
       id: String!
-      name: String!
-      group: String!
-      weight: Float! 
+      name: String
+      group: String
+      weight: Float
       measures: [Measure]
     }
     type Measure {
@@ -97,6 +97,12 @@ exports.createSchemaCustomization = ({ actions }) => {
     type PreviewImage {
       url: String!
       type: String!
+    }
+    type StockState {
+      available: Boolean!
+      quantity: Int!
+      appearance: Appearance
+      size: Size
     }
     type ${SELLABLE_NODE_TYPE} implements Node {
       id: ID!
@@ -117,6 +123,7 @@ exports.createSchemaCustomization = ({ actions }) => {
       sizeFitHint: String!
       appearances: [Appearance!]
       sizes: [Size!]
+      stockStates: [StockState!]
       remoteImage: File @link
     }
     type ${CURRENCY_NODE_TYPE} implements Node {
